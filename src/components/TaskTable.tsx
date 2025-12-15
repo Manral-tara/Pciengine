@@ -46,6 +46,8 @@ export interface Task {
   completionDate?: string;
   progressPercentage?: number; // 0-100
   status?: 'not-started' | 'in-progress' | 'completed' | 'on-hold';
+  // Cost override field
+  verifiedCost?: number; // Manual cost override - when provided, overrides calculated cost
 }
 
 interface TaskTableProps {

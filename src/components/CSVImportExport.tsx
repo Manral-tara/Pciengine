@@ -33,14 +33,16 @@ const APP_FIELDS = [
   { value: 'ISR', label: 'ISR (Initial Scope Rating)', required: false },
   { value: 'CF', label: 'CF (Complexity Factor)', required: false },
   { value: 'UXI', label: 'UXI (UX Impact)', required: false },
-  { value: 'RCF', label: 'RCF (Risk Complexity)', required: false },
-  { value: 'AEP', label: 'AEP (Architecture Points)', required: false },
+  { value: 'RCF', label: 'RCF (Resource Consumption)', required: false },
+  { value: 'AEP', label: 'AEP (Architectural Effort)', required: false },
   { value: 'L', label: 'L (Learning Curve)', required: false },
-  { value: 'MLW', label: 'MLW (Multi-Layer Work)', required: false },
-  { value: 'CGW', label: 'CGW (Cross-Group Work)', required: false },
-  { value: 'RF', label: 'RF (Rework Factor)', required: false },
-  { value: 'S', label: 'S (Specialty Factor)', required: false },
-  { value: 'GLRI', label: 'GLRI (Governance/Legal Risk)', required: false },
+  { value: 'MLW', label: 'MLW (Maintenance Load)', required: false },
+  { value: 'CGW', label: 'CGW (Code Generation)', required: false },
+  { value: 'RF', label: 'RF (Risk Factor)', required: false },
+  { value: 'S', label: 'S (Skill Level)', required: false },
+  { value: 'GLRI', label: 'GLRI (Global Resource Index)', required: false },
+  { value: 'verifiedCost', label: 'Verified Cost (Override)', required: false },
+  { value: 'skip', label: '--- Skip Column ---', required: false }
 ];
 
 // Auto-calculate PCI factors based on task type and estimated hours
@@ -145,7 +147,8 @@ export function CSVImportExport({ isOpen, onClose, onImport }: CSVImportExportPr
         'CGW',
         'RF',
         'S',
-        'GLRI'
+        'GLRI',
+        'Verified Cost (Override)'
       ],
       [
         'Phase 1: Discovery',
@@ -170,7 +173,8 @@ export function CSVImportExport({ isOpen, onClose, onImport }: CSVImportExportPr
         '1.5',
         '1',
         '1',
-        '1'
+        '1',
+        ''  // Verified Cost - leave blank for auto-calculation
       ],
       [
         'Phase 1: Discovery',
@@ -195,7 +199,8 @@ export function CSVImportExport({ isOpen, onClose, onImport }: CSVImportExportPr
         '1.5',
         '1',
         '1',
-        '1'
+        '1',
+        ''  // Verified Cost - leave blank for auto-calculation
       ],
       [
         'Phase 2: Development',
@@ -220,7 +225,8 @@ export function CSVImportExport({ isOpen, onClose, onImport }: CSVImportExportPr
         '1.5',
         '1',
         '1.5',
-        '2.0'
+        '2.0',
+        '15000'  // Example: Manual cost override
       ],
       [
         'Phase 3: Testing',
@@ -245,7 +251,8 @@ export function CSVImportExport({ isOpen, onClose, onImport }: CSVImportExportPr
         '1',
         '1',
         '1',
-        '1'
+        '1',
+        ''  // Verified Cost - leave blank for auto-calculation
       ],
     ];
 
@@ -382,6 +389,8 @@ export function CSVImportExport({ isOpen, onClose, onImport }: CSVImportExportPr
           autoMappings.push({ csvColumn: header, appField: 'S' });
         } else if (normalized === 'glri') {
           autoMappings.push({ csvColumn: header, appField: 'GLRI' });
+        } else if (normalized === 'verifiedcost') {
+          autoMappings.push({ csvColumn: header, appField: 'verifiedCost' });
         }
       });
 
@@ -443,6 +452,7 @@ export function CSVImportExport({ isOpen, onClose, onImport }: CSVImportExportPr
       const actualHours = getValue('actualHours');
       const status = getValue('status');
       const notes = getValue('notes');
+      const verifiedCostValue = getValue('verifiedCost');
 
       // Check if PCI factors are provided
       const hasISR = getValue('ISR');
@@ -505,6 +515,11 @@ export function CSVImportExport({ isOpen, onClose, onImport }: CSVImportExportPr
           status: (status as any) || 'not-started',
           taskElements: [],
         };
+
+        // Add verified cost override if provided
+        if (verifiedCostValue && !isNaN(parseFloat(verifiedCostValue))) {
+          baseTask.verifiedCost = parseFloat(verifiedCostValue);
+        }
 
         // Add description if present
         if (description) {
@@ -705,6 +720,7 @@ export function CSVImportExport({ isOpen, onClose, onImport }: CSVImportExportPr
                         <li>• Start and completion dates</li>
                         <li>• Estimated and actual hours tracking</li>
                         <li>• All 11 PCI factors (ISR, CF, UXI, RCF, AEP, L, MLW, CGW, RF, S, GLRI)</li>
+                        <li>• <strong>Verified Cost (Override)</strong> - Optional column to manually set fixed costs</li>
                         <li>• Status field (not-started, in-progress, completed, on-hold)</li>
                         <li>• <strong>Smart Auto-Calculation:</strong> Leave PCI columns empty and the system will calculate based on Task Type + Estimated Hours!</li>
                       </ul>
